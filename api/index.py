@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
+from mangum import Mangum
 
 from scrapers.linkedin import scrape_linkedin
 
@@ -12,8 +13,9 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
 
@@ -22,8 +24,8 @@ app.add_middleware(
 def home():
 
     return {
-        "status":"online",
-        "service":"LinkedIn scraper"
+        "status": "online",
+        "service": "LinkedIn scraper API"
     }
 
 
@@ -31,30 +33,49 @@ def home():
 @app.get("/api/jobs")
 def jobs(
 
-    keyword:str = Query(
+    keyword: str = Query(
         "software developer"
     ),
 
-    location:str = Query(
+    location: str = Query(
         "London"
     )
 
 ):
 
-    results = scrape_linkedin(
-        keyword,
-        location
-    )
+    try:
+
+        results = scrape_linkedin(
+            keyword,
+            location
+        )
 
 
-    return {
+        return {
 
-        "count":len(results),
+            "success": True,
 
-        "source":
-        "LinkedIn",
+            "count": len(results),
 
-        "jobs":
-        results
+            "source": "LinkedIn",
 
-    }
+            "jobs": results
+
+        }
+
+
+    except Exception as e:
+
+        return {
+
+            "success": False,
+
+            "error": str(e),
+
+            "jobs": []
+
+        }
+
+
+
+handler = Mangum(app)
