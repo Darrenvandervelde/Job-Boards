@@ -1,234 +1,186 @@
-from playwright.sync_api import sync_playwright
+import requests
+from bs4 import BeautifulSoup
 from urllib.parse import quote
 import uuid
-import os
 
 
 def scrape_linkedin(keyword: str, location: str, limit=20):
 
     jobs = []
 
-    with sync_playwright() as p:
+    url = (
+        "https://www.linkedin.com/jobs/search/"
+        f"?keywords={quote(keyword)}"
+        f"&location={quote(location)}"
+    )
 
-        browser = p.chromium.launch(
-            headless=True,
-            args=[
-                "--disable-blink-features=AutomationControlled",
-                "--no-sandbox",
-                "--disable-dev-shm-usage"
-            ]
+
+    headers = {
+
+        "User-Agent":
+        (
+            "Mozilla/5.0 "
+            "(Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 "
+            "Chrome/120 Safari/537.36"
+        ),
+
+        "Accept-Language":
+        "en-GB,en;q=0.9"
+
+    }
+
+
+    try:
+
+        response = requests.get(
+            url,
+            headers=headers,
+            timeout=20
         )
 
 
-        context = browser.new_context(
-            viewport={
-                "width":1600,
-                "height":900
-            },
+        response.raise_for_status()
 
-            locale="en-GB",
 
-            user_agent=(
-                "Mozilla/5.0 "
-                "(Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 "
-                "Chrome/137 Safari/537.36"
-            )
+    except Exception as e:
+
+        print(
+            "LinkedIn request failed:",
+            e
         )
 
+        return []
 
-        page = context.new_page()
 
 
-        url = (
-            "https://www.linkedin.com/jobs/search/"
-            f"?keywords={quote(keyword)}"
-            f"&location={quote(location)}"
-        )
+    soup = BeautifulSoup(
+        response.text,
+        "html.parser"
+    )
 
+
+    cards = soup.select(
+        ".base-card"
+    )
+
+
+    for card in cards[:limit]:
 
         try:
 
-            page.goto(
-                url,
-                wait_until="networkidle",
-                timeout=60000
+            title = card.select_one(
+                ".base-search-card__title"
             )
 
 
-            page.wait_for_timeout(3000)
+            company = card.select_one(
+                ".base-search-card__subtitle"
+            )
 
 
-        except:
+            location_text = card.select_one(
+                ".job-search-card__location"
+            )
 
-            browser.close()
-            return []
 
+            link = card.select_one(
+                "a"
+            )
 
-        try:
 
-            page.locator(
-                "button[action-type='ACCEPT']"
-            ).click(timeout=3000)
+            posted = card.select_one(
+                "time"
+            )
 
-        except:
-            pass
 
+            job_title = (
+                title.text.strip()
+                if title else ""
+            )
 
 
-        cards = page.locator(
-            ".base-card"
-        )
+            company_name = (
+                company.text.strip()
+                if company else ""
+            )
 
 
-        count = min(
-            cards.count(),
-            limit
-        )
+            job_location = (
+                location_text.text.strip()
+                if location_text else ""
+            )
 
 
-        for i in range(count):
+            job_url = (
+                link["href"].split("?")[0]
+                if link and link.get("href")
+                else ""
+            )
 
-            try:
 
-                card = cards.nth(i)
+            posted_date = (
+                posted.text.strip()
+                if posted else ""
+            )
 
 
-                title = (
-                    card.locator(
-                        ".base-search-card__title"
-                    )
-                    .inner_text()
-                    .strip()
-                )
+            text = (
+                job_title +
+                job_location
+            ).lower()
 
 
-                company = (
-                    card.locator(
-                        ".base-search-card__subtitle"
-                    )
-                    .inner_text()
-                    .strip()
-                )
 
+            remote = "On-site"
 
-                location_text = (
-                    card.locator(
-                        ".job-search-card__location"
-                    )
-                    .inner_text()
-                    .strip()
-                )
 
+            if "remote" in text:
 
-                posted = ""
+                remote = "Remote"
 
-                try:
+            elif "hybrid" in text:
 
-                    posted = (
-                        card.locator(
-                            "time"
-                        )
-                        .inner_text()
-                        .strip()
-                    )
+                remote = "Hybrid"
 
-                except:
-                    pass
 
 
+            jobs.append({
 
-                link = ""
+                "id": str(uuid.uuid4()),
 
-                try:
+                "title": job_title,
 
-                    link = (
-                        card.locator(
-                            "a"
-                        )
-                        .first
-                        .get_attribute(
-                            "href"
-                        )
-                    )
+                "company": company_name,
 
-                    if link:
-                        link = link.split("?")[0]
+                "location": job_location,
 
-                except:
-                    pass
+                "salary": "Not Listed",
 
+                "posted": posted_date,
 
+                "logo": "",
 
-                text = (
-                    title +
-                    location_text
-                ).lower()
+                "url": job_url,
 
+                "remote": remote,
 
+                "type": "Unknown",
 
-                remote = "On-site"
+                "source": "LinkedIn"
 
+            })
 
-                if "remote" in text:
 
-                    remote="Remote"
+        except Exception as e:
 
+            print(
+                "LinkedIn parse error:",
+                e
+            )
 
-                elif "hybrid" in text:
+            continue
 
-                    remote="Hybrid"
 
 
-
-                jobs.append({
-
-                    "id":str(uuid.uuid4()),
-
-                    "title":title,
-
-                    "company":company,
-
-                    "location":location_text,
-
-                    "salary":"Not Listed",
-
-                    "posted":posted,
-
-                    "logo":"",
-
-                    "url":link,
-
-                    "remote":remote,
-
-                    "type":"Unknown",
-
-                    "source":"LinkedIn"
-
-                })
-
-
-            except Exception:
-
-                continue
-
-
-
-        browser.close()
-
-
-
-    # remove duplicates
-
-    results={}
-
-
-    for job in jobs:
-
-        if job["url"]:
-
-            results[job["url"]] = job
-
-
-
-    return list(results.values())
+    return jobs
