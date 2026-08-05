@@ -6,13 +6,12 @@ from mangum import Mangum
 
 
 # Import scrapers
-from .scrapers.indeed import scrape_indeed
-from .scrapers.linkedin import scrape_linkedin
-from .scrapers.reed import scrape_reed
-from .scrapers.totaljobs import scrape_totaljobs
-from .scrapers.cvlibrary import scrape_cvlibrary
-from .scrapers.glassdoor import scrape_glassdoor
-
+from scrapers.indeed import scrape_indeed
+from scrapers.linkedin import scrape_linkedin
+from scrapers.reed import scrape_reed
+from scrapers.totaljobs import scrape_totaljobs
+from scrapers.cvlibrary import scrape_cvlibrary
+from scrapers.glassdoor import scrape_glassdoor
 
 
 app = FastAPI(
