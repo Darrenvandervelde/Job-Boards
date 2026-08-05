@@ -2,71 +2,77 @@ import cors from "cors";
 import { scrapeLinkedIn } from "../scrapers/linkedin.js";
 
 
-const corsMiddleware = cors({
-    origin:"*"
-});
+const corsMiddleware = cors();
+
 
 
 export default async function handler(req,res){
 
-    corsMiddleware(
-        req,
-        res,
-        async()=>{
 
-            try{
+    corsMiddleware(req,res,async()=>{
 
 
-                const keyword =
-                req.query.keyword ||
-                "software developer";
+        try{
 
 
-                const location =
-                req.query.location ||
-                "London";
+            console.log(
+                "API STARTED"
+            );
 
 
-                const jobs =
-                await scrapeLinkedIn(
-                    keyword,
-                    location
-                );
+            console.log(
+                req.query
+            );
 
 
-                res.status(200).json({
-
-                    success:true,
-
-                    source:"LinkedIn",
-
-                    count:jobs.length,
-
-                    jobs
-
-                });
+            const jobs =
+            await scrapeLinkedIn(
+                req.query.keyword || "developer",
+                req.query.location || "London"
+            );
 
 
-
-            }
-            catch(error){
-
-
-                console.error(error);
+            console.log(
+                "Jobs found:",
+                jobs.length
+            );
 
 
-                res.status(500).json({
+            res.status(200).json({
 
-                    success:false,
+                success:true,
 
-                    error:error.message
+                count:
+                jobs.length,
 
-                });
+                jobs
 
+            });
 
-            }
 
         }
-    );
+        catch(error){
+
+
+            console.error(
+                "SCRAPER ERROR:",
+                error
+            );
+
+
+            res.status(500).json({
+
+                success:false,
+
+                message:error.message
+
+            });
+
+
+        }
+
+
+    });
+
 
 }
