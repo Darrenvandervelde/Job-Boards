@@ -2,6 +2,7 @@ from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+from mangum import Mangum
 
 
 # Import scrapers
@@ -56,16 +57,10 @@ def deduplicate(jobs):
 
 @app.get("/")
 def home():
-
     return {
-
         "status": "running",
-
         "service": "ABS Recruitment Job API"
-
     }
-
-
 
 
 @app.get("/api/jobs")
@@ -297,3 +292,4 @@ def jobs(
             errors
 
     }
+handler = Mangum(app)
