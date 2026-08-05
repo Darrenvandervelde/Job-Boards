@@ -1,15 +1,16 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/index.py"
-    }
-  ]
+    "version":2,
+
+    "functions":{
+        "api/jobs.js":{
+            "runtime":"nodejs22.x"
+        }
+    },
+
+    "routes":[
+        {
+            "src":"/api/jobs",
+            "dest":"/api/jobs.js"
+        }
+    ]
 }
