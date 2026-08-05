@@ -1,16 +1,10 @@
 {
-    "version":2,
+    "version": 2,
 
-    "functions":{
-        "api/jobs.js":{
-            "runtime":"nodejs22.x"
-        }
-    },
-
-    "routes":[
+    "routes": [
         {
-            "src":"/api/jobs",
-            "dest":"/api/jobs.js"
+            "src": "/api/jobs",
+            "dest": "/api/jobs.js"
         }
     ]
 }
