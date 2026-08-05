@@ -63,7 +63,7 @@ def home():
     }
 
 
-@app.get("/api/jobs")
+@app.get("/jobs")
 def jobs(
 
     keyword: str = Query(
